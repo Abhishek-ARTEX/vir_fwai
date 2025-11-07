@@ -1,0 +1,5 @@
+{
+  "name": "Viral Post Generator AI",
+  "description": "An AI-powered tool to generate 10 viral Instagram post concepts based on the latest trending news in any industry.",
+  "requestFramePermissions": []
+}
