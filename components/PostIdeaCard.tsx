@@ -36,6 +36,27 @@ const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
 };
 
 const PostIdeaCard: React.FC<PostIdeaCardProps> = ({ idea }) => {
+  const [allCopied, setAllCopied] = useState(false);
+
+  const handleCopyAll = () => {
+    const allText = `
+--- ON-IMAGE TEXT ---
+${idea.on_image_text}
+
+--- CAPTION ---
+${idea.caption}
+
+--- IMAGE PROMPT ---
+${idea.image_generation_prompt}
+
+--- ALT TEXT ---
+${idea.alt_text}
+    `;
+    navigator.clipboard.writeText(allText.trim());
+    setAllCopied(true);
+    setTimeout(() => setAllCopied(false), 2000);
+  };
+
   return (
     <div className="bg-black border border-white shadow-xl overflow-hidden flex flex-col h-full">
       <div className="aspect-square w-full bg-black flex items-center justify-center p-6 relative">
@@ -52,9 +73,15 @@ const PostIdeaCard: React.FC<PostIdeaCardProps> = ({ idea }) => {
         <h3 className="text-xl font-bold mb-2 text-white">{idea.short_hook}</h3>
         <p className="text-gray-400 text-sm mb-4 flex-grow">{idea.concept}</p>
         
-        <div className="space-y-4 text-sm mt-auto">
+        <div className="space-y-2 text-sm mt-auto">
+           <button 
+             onClick={handleCopyAll}
+             className="w-full bg-white text-black font-semibold py-2 px-4 transition-colors duration-200 hover:bg-gray-300"
+           >
+             {allCopied ? 'Copied!' : 'Copy All Assets'}
+           </button>
           <details className="bg-gray-900 p-3">
-            <summary className="font-semibold text-white cursor-pointer">View Caption & Assets</summary>
+            <summary className="font-semibold text-white cursor-pointer">View Individual Assets</summary>
             <div className="mt-3 space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-1">

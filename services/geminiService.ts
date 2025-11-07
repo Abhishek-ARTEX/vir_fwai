@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import type { ApiResponse } from '../types';
 
 const API_KEY = process.env.API_KEY;
@@ -10,89 +10,47 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-        industry: { type: Type.STRING },
-        top_articles: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    summary: { type: Type.STRING },
-                    insight: { type: Type.STRING },
-                },
-                required: ["title", "summary", "insight"],
-            },
-        },
-        viral_ideas: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    idea_id: { type: Type.INTEGER },
-                    short_hook: { type: Type.STRING },
-                    concept: { type: Type.STRING },
-                    tone: { type: Type.STRING },
-                    call_to_action: { type: Type.STRING },
-                    related_news_title: { type: Type.STRING },
-                    image_generation_prompt: { type: Type.STRING },
-                    on_image_text: { type: Type.STRING },
-                    caption: { type: Type.STRING },
-                    alt_text: { type: Type.STRING },
-                },
-                required: [
-                    "idea_id", "short_hook", "concept", "tone",
-                    "call_to_action", "related_news_title",
-                    "image_generation_prompt", "on_image_text",
-                    "caption", "alt_text"
-                ],
-            },
-        },
-    },
-    required: ["industry", "top_articles", "viral_ideas"],
-};
-
 export const generateViralPosts = async (industry: string): Promise<ApiResponse> => {
   const prompt = `
-    You are an expert social media strategist and AI automation designer.
+    You are an expert social media strategist powered by Google Search. Your task is to analyze real-time search trends and news for a specific industry and generate viral content ideas.
 
-    Objective:
-    Create 10 viral Instagram post concepts based on the latest trending news in a chosen industry.
+    INDUSTRY: "${industry}"
 
-    Steps:
-    1. Research and summarize the *10 most trending and relevant news stories* in the **${industry}** industry. For each story, include:
-       - title
-       - one-sentence summary (max 20 words)
-       - short insight on why it's going viral (10–15 words)
+    Using Google Search, perform the following steps:
 
-    2. Based on these news items, generate *10 unique viral post ideas*.
-       For each idea, include:
-       - idea_id (1–10)
-       - short_hook (attention-grabbing line, ≤12 words)
-       - concept (2–3 sentences explaining the post)
-       - tone (choose: inspirational, informative, emotional, or thought-provoking)
-       - call_to_action (short 1-line engagement prompt)
-       - related_news_title (which article inspired it)
+    1.  **Find Trending News:** Identify the top 10 most current, trending, and relevant news stories for the specified industry.
+    2.  **Generate Content Plan:** Based on this research, create a comprehensive content plan.
 
-    3. For each viral idea, create both **visual and caption assets**:
-       - image_generation_prompt → a *detailed* description for a square (1:1) Instagram post image. It must include a composition that leaves space for bold, readable overlay text (e.g., “top third clean for text”). Ensure good color contrast, minimal background clutter, and professional tone.
-       - on_image_text → 6–12 words of impactful text that should appear boldly on the image.
-       - caption → a well-written 2–4 paragraph Instagram caption (≤350 words) that:
-           * opens with a strong hook,
-           * summarizes the story or lesson in a simple, human way,
-           * ends with a call to action and 3 relevant hashtags.
-       - alt_text → a 20–40 word accessibility description of the final image.
+    Your final output MUST be a single, clean, valid JSON object that follows this structure exactly:
+    {
+      "industry": "The industry provided",
+      "top_articles": [
+        {
+          "title": "News article title",
+          "summary": "A one-sentence summary of the article (max 20 words).",
+          "insight": "A short insight on why this story is currently trending (10-15 words)."
+        }
+      ],
+      "viral_ideas": [
+        {
+          "idea_id": 1,
+          "short_hook": "An attention-grabbing line (<=12 words).",
+          "concept": "A 2-3 sentence explanation of the post concept.",
+          "tone": "Choose one: inspirational, informative, emotional, or thought-provoking.",
+          "call_to_action": "A short, 1-line engagement prompt.",
+          "related_news_title": "The title of the news article that inspired this idea.",
+          "image_generation_prompt": "A detailed prompt for a square (1:1) Instagram image. It must describe a composition that leaves clean space for overlay text (e.g., 'top third is a clean sky for text overlay'). Ensure good color contrast and a professional tone.",
+          "on_image_text": "6-12 words of impactful text to overlay on the image.",
+          "caption": "A well-written 2-4 paragraph Instagram caption (<=350 words) that opens with a strong hook, summarizes the story, and ends with a call to action and 3 relevant hashtags.",
+          "alt_text": "A 20-40 word accessibility description of the final image."
+        }
+      ]
+    }
 
-    Formatting:
-    Return the output strictly in clean, valid JSON.
-
-    Rules:
-    - Use simple, natural English.
-    - Avoid jargon or overly technical terms.
-    - Make sure on-image text is **highly readable** and the image prompt clearly reserves clean space for text.
-    - The overall goal: make content that is informative, emotional, and easily shareable on Instagram.
+    RULES:
+    - The output must be ONLY the JSON object. No introductory text, no markdown, just the raw JSON.
+    - Ensure all 10 articles and 10 viral ideas are generated.
+    - The content should be engaging, shareable, and tailored for Instagram.
     `;
     
     try {
@@ -100,14 +58,15 @@ export const generateViralPosts = async (industry: string): Promise<ApiResponse>
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
-                responseMimeType: "application/json",
-                responseSchema: responseSchema,
+                tools: [{googleSearch: {}}], // Use Google Search grounding
                 temperature: 0.7,
             },
         });
 
         const jsonText = response.text.trim();
-        const parsedData = JSON.parse(jsonText);
+        // Sometimes the model might wrap the JSON in ```json ... ```, so we strip it.
+        const cleanedJsonText = jsonText.replace(/^```json\n/, '').replace(/\n```$/, '');
+        const parsedData = JSON.parse(cleanedJsonText);
 
         return parsedData as ApiResponse;
 
