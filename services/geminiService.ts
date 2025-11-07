@@ -2,15 +2,15 @@
 import { GoogleGenAI } from "@google/genai";
 import type { ApiResponse } from '../types';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
 export const generateViralPosts = async (industry: string): Promise<ApiResponse> => {
+  const API_KEY = process.env.API_KEY;
+
+  if (!API_KEY) {
+    throw new Error("API_KEY environment variable not set. Please ensure it is configured correctly.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
+
   const prompt = `
     You are an expert social media strategist powered by Google Search. Your task is to analyze real-time search trends and news for a specific industry and generate viral content ideas.
 
@@ -72,6 +72,6 @@ export const generateViralPosts = async (industry: string): Promise<ApiResponse>
 
     } catch (error) {
         console.error("Error calling Gemini API:", error);
-        throw new Error("Failed to generate content from Gemini API.");
+        throw error;
     }
 };

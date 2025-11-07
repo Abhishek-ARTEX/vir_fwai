@@ -30,7 +30,11 @@ const App: React.FC = () => {
       setResults(response);
     } catch (err) {
       console.error(err);
-      setError('An error occurred while generating content. Please check your API key and try again.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred. Please check your API key and try again.');
+      }
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -58,8 +62,9 @@ const App: React.FC = () => {
           />
 
           {error && (
-            <div className="mt-8 text-center bg-gray-900 border border-white text-white p-4">
-              <p>{error}</p>
+            <div className="mt-8 text-center bg-gray-900 border border-white text-white p-4 max-w-2xl mx-auto">
+              <p className="font-semibold">Generation Failed</p>
+              <p className="mt-2 text-sm">{error}</p>
             </div>
           )}
 
